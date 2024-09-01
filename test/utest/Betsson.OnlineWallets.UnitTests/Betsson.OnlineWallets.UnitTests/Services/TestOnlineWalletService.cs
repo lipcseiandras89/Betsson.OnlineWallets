@@ -3,7 +3,7 @@ namespace Betsson.OnlineWallets.UnitTests.Services
     [TestFixture]
     internal class TestOnlineWalletService
     {
-        private static readonly object[] decimalExtremeValues = [
+        private static readonly object[] _decimalExtremeValues = [
             new decimal[] { -3, -4 },
             new decimal[] { decimal.MaxValue, decimal.MaxValue },
             new decimal[] { decimal.MinValue, decimal.MinValue }
@@ -51,7 +51,7 @@ namespace Betsson.OnlineWallets.UnitTests.Services
         /// 
         /// GetBalanceAsync returns a Balance with an amount, which equals to BalanceBefore + Amount.
         /// </summary>
-        [TestCaseSource(nameof(decimalExtremeValues))]
+        [TestCaseSource(nameof(_decimalExtremeValues))]
         public void TestGetBalanceAsync_OnlineWalletEntryIsNonDefault(decimal BalanceBefore, decimal Amount)
         {
             Assert.Fail();

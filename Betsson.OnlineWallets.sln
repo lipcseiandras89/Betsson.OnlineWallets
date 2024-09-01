@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "utest", "utest", "{B8E4D014
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Betsson.OnlineWallets.UnitTests", "test\utest\Betsson.OnlineWallets.UnitTests\Betsson.OnlineWallets.UnitTests\Betsson.OnlineWallets.UnitTests.csproj", "{AE1D3FD6-C10F-4BE6-853C-6723C92731C5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Betsson.OnlineWallets.Data.UnitTests", "Betsson.OnlineWallets.Data.UnitTests\Betsson.OnlineWallets.Data.UnitTests.csproj", "{1A160AFE-570D-4D2C-8DBE-0950F1FE7765}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{AE1D3FD6-C10F-4BE6-853C-6723C92731C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AE1D3FD6-C10F-4BE6-853C-6723C92731C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AE1D3FD6-C10F-4BE6-853C-6723C92731C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A160AFE-570D-4D2C-8DBE-0950F1FE7765}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A160AFE-570D-4D2C-8DBE-0950F1FE7765}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A160AFE-570D-4D2C-8DBE-0950F1FE7765}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A160AFE-570D-4D2C-8DBE-0950F1FE7765}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -49,6 +55,7 @@ Global
 		{4D65DE1B-3A57-4E78-981D-2D1279995F6D} = {07962A7A-1196-4703-9F59-D710D906DCAB}
 		{B8E4D014-3E88-4F4E-A52B-D2AAAB00EDB0} = {16F65FF9-D2C0-4249-A1A8-34A07D6DC597}
 		{AE1D3FD6-C10F-4BE6-853C-6723C92731C5} = {B8E4D014-3E88-4F4E-A52B-D2AAAB00EDB0}
+		{1A160AFE-570D-4D2C-8DBE-0950F1FE7765} = {B8E4D014-3E88-4F4E-A52B-D2AAAB00EDB0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C1991342-AE5A-4224-942F-7C339B5F39D5}

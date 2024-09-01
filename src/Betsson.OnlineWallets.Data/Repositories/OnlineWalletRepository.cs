@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Betsson.OnlineWallets.Data.IntegrationTests")]
+[assembly: InternalsVisibleTo("Betsson.OnlineWallets.Data.UnitTests")]
 
 namespace Betsson.OnlineWallets.Data.Repositories
 {
