@@ -5,7 +5,7 @@ namespace Betsson.OnlineWallets.Data.UnitTests.Repositories
     [TestFixture]
     internal class TestOnlineWalletRepository
     {
-        private readonly IOnlineWalletRepository? onlineWalletRepository;
+        private readonly IOnlineWalletRepository? _onlineWalletRepository;
 
         /// <summary>
         /// Arrange
