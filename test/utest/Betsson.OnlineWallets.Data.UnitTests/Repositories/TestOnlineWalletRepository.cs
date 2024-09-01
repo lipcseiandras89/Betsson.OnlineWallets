@@ -10,6 +10,44 @@ namespace Betsson.OnlineWallets.Data.UnitTests.Repositories
         /// <summary>
         /// Arrange
         /// 
+        /// onlineWalletContext is null.
+        /// 
+        /// Act
+        /// 
+        /// Call GetLastOnlineWalletEntryAsync.
+        /// 
+        /// Assert
+        /// 
+        /// GetLastOnlineWalletEntryAsync returns null.
+        /// </summary>
+        [Test]
+        public void TestGetLastOnlineWalletEntryAsync_OnlineWalletContextIsNull()
+        {
+            Assert.Fail();
+        }
+
+        /// <summary>
+        /// Arrange
+        /// 
+        /// onlineWalletContext is null.
+        /// 
+        /// Act
+        /// 
+        /// Call InsertOnlineWalletEntryAsync.
+        /// 
+        /// Assert
+        /// 
+        /// InsertOnlineWalletEntryAsync returns null.
+        /// </summary>
+        [Test]
+        public void TestInsertOnlineWalletEntryAsync_OnlineWalletContextIsNull()
+        {
+            Assert.Fail();
+        }
+
+        /// <summary>
+        /// Arrange
+        /// 
         /// onlineWalletEntry is null.
         /// 
         /// Act

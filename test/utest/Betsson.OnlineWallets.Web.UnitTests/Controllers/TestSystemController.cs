@@ -1,4 +1,4 @@
-namespace Betsson.OnlineWallets.Web.UnitTests
+namespace Betsson.OnlineWallets.Web.UnitTests.Controllers
 {
     [TestFixture]
     public class TestSystemController
