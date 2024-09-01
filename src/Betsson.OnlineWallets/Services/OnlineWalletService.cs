@@ -5,6 +5,7 @@ using Betsson.OnlineWallets.Models;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Betsson.OnlineWallets.UnitTests")]
+[assembly: InternalsVisibleTo("Betsson.OnlineWallets.IntegrationTests")]
 
 namespace Betsson.OnlineWallets.Services
 {

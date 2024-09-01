@@ -1,7 +1,7 @@
 namespace Betsson.OnlineWallets.Web.UnitTests.Controllers
 {
     [TestFixture]
-    public class TestSystemController
+    internal class TestSystemController
     {
         private readonly static object[] _error = [null, new Exception()];
 

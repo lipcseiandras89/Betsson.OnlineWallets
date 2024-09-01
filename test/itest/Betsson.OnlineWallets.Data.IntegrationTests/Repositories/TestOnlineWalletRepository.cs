@@ -1,6 +1,6 @@
-namespace Betsson.OnlineWallets.Data.IntegrationTests
+namespace Betsson.OnlineWallets.Data.IntegrationTests.Repositories
 {
-    public class TestOnlineWalletRepository
+    internal class TestOnlineWalletRepository
     {
         /// <summary>
         /// Arrange
