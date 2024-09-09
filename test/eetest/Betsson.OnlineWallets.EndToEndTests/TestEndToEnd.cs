@@ -2,16 +2,20 @@ using Betsson.OnlineWallets.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net.Http.Json;
 using Betsson.OnlineWallets.Web;
+using System.Net;
 namespace Betsson.OnlineWallets.EndToEndTests
 {
     [TestFixture]
     internal class TestEndToEnd
     {
         private const string REQUEST_URI = "http://localhost:5047/onlinewallet/";
-        private readonly string _requestUriBalance = "http://localhost:5047/onlinewallet/" + "balance";
-        private readonly string _requestUriDeposit = "http://localhost:5047/onlinewallet/" + "deposit";
-        private readonly string _requestUriWithdraw = "http://localhost:5047/onlinewallet/" + "withdraw";
-        private readonly WebApplicationFactory<Program> _factory = new();
+        private static readonly string _requestUriBalance = "http://localhost:5047/onlinewallet/" + "balance";
+        private static readonly string _requestUriDeposit = "http://localhost:5047/onlinewallet/" + "deposit";
+        private static readonly string _requestUriWithdraw = "http://localhost:5047/onlinewallet/" + "withdraw";
+        private static readonly WebApplicationFactory<Program> _factory = new();
+
+        private static object[] FaultyTestSource => [_requestUriDeposit, _requestUriWithdraw];
+
         private HttpClient _client;
 
         [SetUp]
@@ -37,14 +41,28 @@ namespace Betsson.OnlineWallets.EndToEndTests
         [Test]
         async public Task TestApiRan()
         {
-            // Arrange
-
             // Act
             var response = await _client.GetAsync(_requestUriBalance);
 
             // Assert
             response.EnsureSuccessStatusCode(); // Status Code 200-299
             Assert.That(response.Content.Headers.ContentType.ToString(), Is.EqualTo("application/json; charset=utf-8"));
+        }
+
+        /// <summary>
+        /// Tests whether the API returns an error code, if the json can not be serialized.
+        /// </summary>
+        [TestCaseSource(nameof(FaultyTestSource))]
+        async public Task TestFaultyInput(string uri)
+        {
+            // Arrange
+            var content = JsonContent.Create("{ amount: 1 }");
+
+            // Act
+            var response = await _client.PostAsync(uri, content);
+
+            // Assert
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         }
 
         /// <summary>
@@ -157,6 +175,64 @@ namespace Betsson.OnlineWallets.EndToEndTests
         /// <summary>
         /// Arrange
         /// 
+        /// Deposit has negative value.
+        /// 
+        /// Act
+        /// 
+        /// Call deposit.
+        /// 
+        /// Assert
+        /// 
+        /// Call returns with an error.
+        /// </summary>
+        [Test]
+        async public Task TestNegativeDeposit()
+        {
+            var response = await _client.PostAsJsonAsync(_requestUriDeposit, new Deposit { Amount = -1 });
+            try
+            {
+                response.EnsureSuccessStatusCode(); // Status Code 200-299
+            }
+            catch (HttpRequestException)
+            {
+                Assert.Pass();
+            }
+
+            Assert.Fail();
+        }
+
+        /// <summary>
+        /// Arrange
+        /// 
+        /// Withdrawal has negative value.
+        /// 
+        /// Act
+        /// 
+        /// Call withdraw.
+        /// 
+        /// Assert
+        /// 
+        /// Call returns with an error.
+        /// </summary>
+        [Test]
+        async public Task TestNegativeWithdraw()
+        {
+            var response = await _client.PostAsJsonAsync(_requestUriDeposit, new Withdrawal { Amount = -1 });
+            try
+            {
+                response.EnsureSuccessStatusCode(); // Status Code 200-299
+            }
+            catch (HttpRequestException)
+            {
+                Assert.Pass();
+            }
+
+            Assert.Fail();
+        }
+
+        /// <summary>
+        /// Arrange
+        /// 
         /// Deposit has minimum value.
         /// 
         /// Act
@@ -257,6 +333,27 @@ namespace Betsson.OnlineWallets.EndToEndTests
             var response = await _client.PostAsJsonAsync(_requestUriWithdraw, new Deposit { Amount = decimal.MaxValue });
             Balance balance = await _client.GetFromJsonAsync<Balance>("http://localhost:5047/onlinewallet/balance");
             balance.Amount.Equals(decimal.MaxValue);
+        }
+
+        /// <summary>
+        /// Arrange
+        /// 
+        /// Deposit maximum value.
+        /// 
+        /// Act
+        /// 
+        /// Deposit more.
+        /// 
+        /// Assert
+        /// 
+        /// Deposit returns with validation error.
+        /// </summary>
+        [Test]
+        async public Task TestBalanceOverflow()
+        {
+            _ = await _client.PostAsJsonAsync(_requestUriWithdraw, new Deposit { Amount = decimal.MaxValue });
+            var response = await _client.PostAsJsonAsync(_requestUriWithdraw, new Deposit { Amount = 1 });
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError));
         }
 
         /// <summary>

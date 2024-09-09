@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Betsson.OnlineWallets.Models;
 using Betsson.OnlineWallets.Services;
 using Betsson.OnlineWallets.Web.Models;
+using System.Net;
 
 namespace Betsson.OnlineWallets.Web.Controllers
 {
@@ -25,6 +26,10 @@ namespace Betsson.OnlineWallets.Web.Controllers
         public async Task<ActionResult<BalanceResponse>> Balance()
         {
             Balance balance = await _onlineWalletService.GetBalanceAsync();
+            if (balance == null)
+            {
+                return base.StatusCode((int)HttpStatusCode.InternalServerError);
+            }
 
             BalanceResponse balanceResponse = _mapper.Map<BalanceResponse>(balance);
             
@@ -37,6 +42,10 @@ namespace Betsson.OnlineWallets.Web.Controllers
             Deposit deposit = _mapper.Map<Deposit>(depositRequest);
 
             Balance balance =  await _onlineWalletService.DepositFundsAsync(deposit);
+            if (balance == null)
+            {
+                return base.StatusCode((int)HttpStatusCode.InternalServerError);
+            }
 
             BalanceResponse balanceResponse = _mapper.Map<BalanceResponse>(balance);
 
@@ -49,6 +58,10 @@ namespace Betsson.OnlineWallets.Web.Controllers
             Withdrawal withdrawal = _mapper.Map<Withdrawal>(withdrawalRequest); 
 
             Balance balance = await _onlineWalletService.WithdrawFundsAsync(withdrawal);
+            if (balance == null)
+            {
+                return base.StatusCode((int)HttpStatusCode.InternalServerError);
+            }
 
             BalanceResponse balanceResponse = _mapper.Map<BalanceResponse>(balance);
 
