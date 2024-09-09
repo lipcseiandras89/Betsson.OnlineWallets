@@ -5,6 +5,6 @@ namespace Betsson.OnlineWallets.Data.Repositories
     public interface IOnlineWalletRepository
     {
         Task<OnlineWalletEntry?> GetLastOnlineWalletEntryAsync();
-        Task InsertOnlineWalletEntryAsync(OnlineWalletEntry onlineWalletEntry);
+        Task? InsertOnlineWalletEntryAsync(OnlineWalletEntry onlineWalletEntry);
     }
 }

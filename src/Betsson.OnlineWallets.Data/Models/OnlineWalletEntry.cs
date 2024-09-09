@@ -3,14 +3,13 @@ namespace Betsson.OnlineWallets.Data.Models
     public class OnlineWalletEntry
     {
         public string Id { get; set; }
-        public DateTimeOffset EventTime { get; set; } = DateTimeOffset.Now.UtcDateTime;
+        public virtual DateTimeOffset EventTime { get; set; } = DateTimeOffset.Now.UtcDateTime;
 
-        public decimal Amount { get; set; }
-        public decimal BalanceBefore { get; set; }
+        public virtual decimal Amount { get; set; }
+        public virtual decimal BalanceBefore { get; set; }
 
-        public OnlineWalletEntry()
-        {
-            Id = Guid.NewGuid().ToString();
-        }
+        public OnlineWalletEntry() {  }
+
+        internal virtual void Construct() { Id = Guid.NewGuid().ToString(); }
     }
 }

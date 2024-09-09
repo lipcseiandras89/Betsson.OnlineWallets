@@ -1,11 +1,16 @@
+using Betsson.OnlineWallets.Data.Models;
 using Betsson.OnlineWallets.Data.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Moq;
+using System.Linq.Expressions;
 
 namespace Betsson.OnlineWallets.Data.UnitTests.Repositories
 {
     [TestFixture]
     internal class TestOnlineWalletRepository
     {
-        private readonly IOnlineWalletRepository? _onlineWalletRepository;
+        private IOnlineWalletRepository? _onlineWalletRepository;
 
         /// <summary>
         /// Arrange
@@ -14,35 +19,51 @@ namespace Betsson.OnlineWallets.Data.UnitTests.Repositories
         /// 
         /// Act
         /// 
-        /// Call GetLastOnlineWalletEntryAsync.
+        /// Construct OnlineWalletRepository.
         /// 
         /// Assert
         /// 
-        /// GetLastOnlineWalletEntryAsync returns null.
+        /// Constructor throws ArgumentException.
         /// </summary>
         [Test]
-        public void TestGetLastOnlineWalletEntryAsync_OnlineWalletContextIsNull()
+        public void TestConstructor_OnlineWalletContextIsNull()
         {
-            Assert.Fail();
+            // Arrange
+            OnlineWalletContext context = null;
+            Exception ex;
+
+            // Act
+            TestDelegate construct = () => new OnlineWalletRepository(context);
+
+            // Act and assert
+            Assert.Throws<ArgumentException>(construct, OnlineWalletRepository.WALLETCONTEXT_WAS_NULL);
         }
 
         /// <summary>
         /// Arrange
         /// 
-        /// onlineWalletContext is null.
+        /// Transactions in onlineWalletContext is null.
         /// 
         /// Act
         /// 
-        /// Call InsertOnlineWalletEntryAsync.
+        /// Construct OnlineWalletRepository.
         /// 
         /// Assert
         /// 
-        /// InsertOnlineWalletEntryAsync returns null.
+        /// Constructor throws ArgumentException.
         /// </summary>
         [Test]
-        public void TestInsertOnlineWalletEntryAsync_OnlineWalletContextIsNull()
+        public void TestConstructor_TransactionsIsNull()
         {
-            Assert.Fail();
+            // Arrange
+            Mock<IOnlineWalletContext> mockContext = new();
+            mockContext.SetupGet(x => x.Transactions).Returns(null as DbSet<OnlineWalletEntry>);
+
+            // Act
+            TestDelegate construct = () => new OnlineWalletRepository(mockContext.Object);
+
+            // Assert
+            Assert.Throws<ArgumentException>(construct, OnlineWalletRepository.WALLETCONTEXT_TRANSACTIONS_WAS_NULL);
         }
 
         /// <summary>
@@ -61,7 +82,17 @@ namespace Betsson.OnlineWallets.Data.UnitTests.Repositories
         [Test]
         public void TestInsertOnlineWalletEntryAsync_OnlineWalletEntryIsNull()
         {
-            Assert.Fail();
+            // Arrange
+            Mock<IOnlineWalletContext> mockContext = new Mock<IOnlineWalletContext>();
+            mockContext.SetupGet(x => x.Transactions).Returns(new Mock<DbSet<OnlineWalletEntry>>().Object);
+            _onlineWalletRepository = new OnlineWalletRepository(mockContext.Object);
+            OnlineWalletEntry onlineWalletEntry = null;
+
+            // Act
+            var result = _onlineWalletRepository.InsertOnlineWalletEntryAsync(onlineWalletEntry);
+
+            // Assert
+            Assert.IsNull(result);
         }
 
         /// <summary>
@@ -80,7 +111,24 @@ namespace Betsson.OnlineWallets.Data.UnitTests.Repositories
         [Test]
         public void TestInsertOnlineWalletEntryAsync_Order()
         {
-            Assert.Fail();
+            // Arrange
+            Mock<IOnlineWalletContext> mockContext = new(MockBehavior.Strict);
+            Mock<DbSet<OnlineWalletEntry>> mockTransaction = new(MockBehavior.Strict);
+            mockContext.SetupGet(x => x.Transactions).Returns(mockTransaction.Object);
+            _onlineWalletRepository = new OnlineWalletRepository(mockContext.Object);
+            Mock<OnlineWalletEntry> mockOnlineWalletEntry = new();
+            MockSequence mockSequence = new();
+            Expression<Func<DbSet<OnlineWalletEntry>, EntityEntry<OnlineWalletEntry>>> mockTransactionAction = x => x.Add(It.Is<OnlineWalletEntry>(y => y.Equals(mockOnlineWalletEntry.Object)));
+            Expression<Func<IOnlineWalletContext, int>> mockContextAction = x => x.SaveChanges();
+            mockTransaction.InSequence(mockSequence).Setup(mockTransactionAction).Returns(It.IsAny<EntityEntry<OnlineWalletEntry>>);
+            mockContext.InSequence(mockSequence).Setup(mockContextAction).Returns(0);
+
+            // Act
+            _onlineWalletRepository.InsertOnlineWalletEntryAsync(mockOnlineWalletEntry.Object);
+
+            // Assert
+            mockTransaction.Verify(mockTransactionAction, Times.Once());
+            mockContext.Verify(mockContextAction, Times.Once());
         }
     }
 }

@@ -1,31 +1,44 @@
+using Betsson.OnlineWallets.Data.Factories;
 using Betsson.OnlineWallets.Data.Models;
 using Betsson.OnlineWallets.Data.Repositories;
 using Betsson.OnlineWallets.Exceptions;
 using Betsson.OnlineWallets.Models;
+using Betsson.OnlineWallets.Factories;
+using System.ComponentModel.DataAnnotations;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Betsson.OnlineWallets.UnitTests")]
 [assembly: InternalsVisibleTo("Betsson.OnlineWallets.IntegrationTests")]
-
+// needed for mocking
+[assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 namespace Betsson.OnlineWallets.Services
 {
-    internal class OnlineWalletService : IOnlineWalletService
+    internal class OnlineWalletService(IOnlineWalletRepository onlineWalletRepository) : IOnlineWalletService
     {
-        private readonly IOnlineWalletRepository _onlineWalletRepository;
+        private static readonly SemaphoreSlim semaphoreDeposit = new(1);
+        private static readonly SemaphoreSlim semaphoreWithdraw = new(1);
+        private readonly IOnlineWalletRepository _onlineWalletRepository = onlineWalletRepository;
 
-        public OnlineWalletService(IOnlineWalletRepository onlineWalletRepository)
-        {
-            _onlineWalletRepository = onlineWalletRepository;
-        }
+        public virtual OnlineWalletEntryFactory EntryFactory { get; set; } = new OnlineWalletEntryFactory();
 
-        public async Task<Balance> GetBalanceAsync()
+        public virtual BalanceFactory BalanceFactory { get; set; } = new BalanceFactory();
+
+        public async virtual Task<Balance> GetBalanceAsync()
         {
             OnlineWalletEntry? onlineWalletEntry = await _onlineWalletRepository.GetLastOnlineWalletEntryAsync();
 
-            // Default BalanceBefore to 0 if there are no transactions
-            decimal amount = onlineWalletEntry == default(OnlineWalletEntry) ? 0 : (onlineWalletEntry.BalanceBefore + onlineWalletEntry.Amount);
+            decimal amount;
+            try
+            {
+                // Default BalanceBefore to 0 if there are no transactions
+                amount = onlineWalletEntry == default(OnlineWalletEntry) ? 0 : (onlineWalletEntry.BalanceBefore + onlineWalletEntry.Amount);
+            }
+            catch (OverflowException)
+            {
+                throw new ValidationException("Online wallet's last transaction was in invalid state.");
+            }
 
-            Balance currentBalance = new Balance
+            Balance currentBalance = new()
             {
                 Amount = amount
             };
@@ -33,56 +46,65 @@ namespace Betsson.OnlineWallets.Services
             return currentBalance;
         }
 
-        public async Task<Balance> DepositFundsAsync(Deposit deposit)
+        public async virtual Task<Balance?> DepositFundsAsync(Deposit deposit)
         {
+            semaphoreDeposit.Wait();
             decimal depositAmount = deposit.Amount;
-
-            Balance currentBalance = await GetBalanceAsync();
-            decimal currentBalanceAmount = currentBalance.Amount;
-
-            OnlineWalletEntry depositEntry = new OnlineWalletEntry()
+            OnlineWalletEntry? depositEntry;
+            decimal currentBalanceAmount;
+            try
             {
-                Amount = depositAmount,
-                BalanceBefore = currentBalanceAmount,
-                EventTime = DateTimeOffset.UtcNow
-            };
-
-            await _onlineWalletRepository.InsertOnlineWalletEntryAsync(depositEntry);
-
-            Balance newBalance = new Balance
+                Balance currentBalance = await GetBalanceAsync();
+                currentBalanceAmount = currentBalance.Amount;
+                depositEntry = EntryFactory.GetOnlineWalletEntry;
+                depositEntry.Amount = depositAmount;
+                depositEntry.BalanceBefore = currentBalanceAmount;
+                depositEntry.EventTime = DateTimeOffset.UtcNow;
+                await _onlineWalletRepository.InsertOnlineWalletEntryAsync(depositEntry);
+            }
+            catch
             {
-                Amount = currentBalanceAmount + depositAmount
-            };
+                return null;
+            }
+
+            Balance newBalance = BalanceFactory.GetBalance;
+            newBalance.Amount = currentBalanceAmount + depositAmount;
+            semaphoreDeposit.Release();
 
             return newBalance;
         }
 
-        public async Task<Balance> WithdrawFundsAsync(Withdrawal withdrawal)
+        public async virtual Task<Balance?> WithdrawFundsAsync(Withdrawal withdrawal)
         {
             decimal withdrawalAmount = withdrawal.Amount;
-            Balance currentBalance = await GetBalanceAsync();
-            decimal currentBalanceAmount = currentBalance.Amount;
-
-            if (withdrawalAmount > currentBalance.Amount)
+            decimal currentBalanceAmount;
+            semaphoreWithdraw.Wait();
+            OnlineWalletEntry withdrawalEntry;
+            try
             {
-                throw new InsufficientBalanceException();
+                Balance currentBalance = await GetBalanceAsync();
+                currentBalanceAmount = currentBalance.Amount;
+                if (withdrawalAmount > currentBalance.Amount)
+                {
+                    throw new InsufficientBalanceException();
+                }
+
+                withdrawalAmount *= -1;
+                withdrawalEntry = EntryFactory.GetOnlineWalletEntry;
+                withdrawalEntry.Amount = withdrawalAmount;
+                withdrawalEntry.BalanceBefore = currentBalanceAmount;
+                withdrawalEntry.EventTime = DateTimeOffset.UtcNow;
+                await _onlineWalletRepository.InsertOnlineWalletEntryAsync(withdrawalEntry);
             }
-            
-            withdrawalAmount *= -1;
-            
-            OnlineWalletEntry withdrawalEntry = new OnlineWalletEntry()
+            catch
             {
-                Amount = withdrawalAmount,
-                BalanceBefore = currentBalanceAmount,
-                EventTime = DateTimeOffset.UtcNow
-            };
+                return null;
+            }
 
-            await _onlineWalletRepository.InsertOnlineWalletEntryAsync(withdrawalEntry);
 
-            Balance newBalance = new Balance
-            {
-                Amount = currentBalanceAmount + withdrawalAmount
-            };
+            semaphoreWithdraw.Release();
+            Balance newBalance = BalanceFactory.GetBalance;
+            newBalance.Amount = currentBalanceAmount + withdrawalAmount;
 
             return newBalance;
         }

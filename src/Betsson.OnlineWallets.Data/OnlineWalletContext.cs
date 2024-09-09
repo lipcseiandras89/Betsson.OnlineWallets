@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Betsson.OnlineWallets.Data
 {
-    internal class OnlineWalletContext : DbContext
+    public class OnlineWalletContext : DbContext, IOnlineWalletContext
     {
         public DbSet<OnlineWalletEntry> Transactions { get; set; }
+
+        public override int SaveChanges() => base.SaveChanges();
 
         public OnlineWalletContext(DbContextOptions<OnlineWalletContext> options) : base(options) { }
 
