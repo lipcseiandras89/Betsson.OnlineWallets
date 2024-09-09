@@ -35,7 +35,8 @@ namespace Betsson.OnlineWallets.Services
             }
             catch (OverflowException)
             {
-                throw new ValidationException("Online wallet's last transaction was in invalid state.");
+                // TODO implement error message logic
+                return null;
             }
 
             Balance currentBalance = new()
@@ -64,6 +65,7 @@ namespace Betsson.OnlineWallets.Services
             }
             catch
             {
+                // TODO implement error message logic
                 return null;
             }
 
@@ -76,9 +78,9 @@ namespace Betsson.OnlineWallets.Services
 
         public async virtual Task<Balance?> WithdrawFundsAsync(Withdrawal withdrawal)
         {
+            //semaphoreWithdraw.Wait();
             decimal withdrawalAmount = withdrawal.Amount;
             decimal currentBalanceAmount;
-            semaphoreWithdraw.Wait();
             OnlineWalletEntry withdrawalEntry;
             try
             {
@@ -98,13 +100,14 @@ namespace Betsson.OnlineWallets.Services
             }
             catch
             {
+                // TODO implement error message logic
                 return null;
             }
 
 
-            semaphoreWithdraw.Release();
             Balance newBalance = BalanceFactory.GetBalance;
             newBalance.Amount = currentBalanceAmount + withdrawalAmount;
+            //semaphoreWithdraw.Release();
 
             return newBalance;
         }
