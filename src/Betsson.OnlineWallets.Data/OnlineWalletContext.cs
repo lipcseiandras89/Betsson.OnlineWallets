@@ -5,7 +5,9 @@ namespace Betsson.OnlineWallets.Data
 {
     public class OnlineWalletContext : DbContext
     {
-        public DbSet<OnlineWalletEntry> Transactions { get; set; }
+        public OnlineWalletContext() { }
+
+        public virtual DbSet<OnlineWalletEntry> Transactions { get; set; }
 
         public override int SaveChanges() => base.SaveChanges();
 
