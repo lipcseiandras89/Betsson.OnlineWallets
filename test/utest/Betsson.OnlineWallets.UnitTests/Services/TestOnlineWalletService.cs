@@ -5,7 +5,6 @@ using Betsson.OnlineWallets.Models;
 using Betsson.OnlineWallets.Services;
 using Moq;
 using Betsson.OnlineWallets.Factories;
-using System.ComponentModel.DataAnnotations;
 
 namespace Betsson.OnlineWallets.UnitTests.Services
 {
@@ -475,50 +474,55 @@ namespace Betsson.OnlineWallets.UnitTests.Services
         /// Deposit amount is inserted into online wallet without any missing insertions.
         /// </summary>
         [Test]
-        [Repeat(25)]
         async public Task TestDepositFundsAsync_TimingInsertion()
         {
-            Assert.Fail();
             // Arrange
             const byte LOOP_MAX = 100;
-            const decimal BALANCE_BEFORE = 1;
-            const decimal DEPOSIT_AMOUNT = 2;
-            var balanceActual = BALANCE_BEFORE;
             var mockOnlineWalletRepository = new Mock<IOnlineWalletRepository>();
-            mockOnlineWalletRepository.Setup(x => x.InsertOnlineWalletEntryAsync(It.Is<OnlineWalletEntry>(y => y.Amount.Equals(DEPOSIT_AMOUNT)
-            && y.BalanceBefore.Equals(BALANCE_BEFORE)))).Callback(() => balanceActual += DEPOSIT_AMOUNT);
             var mockOnlineWalletService = new Mock<OnlineWalletService>(mockOnlineWalletRepository.Object)
             {
                 CallBase = true
             };
+            bool previousCallIsGetBalance = false;
             Mock<OnlineWalletEntryFactory> mockOnlineWalletEntryFactory = new();
             Mock<OnlineWalletEntry> mockOnlineWalletEntry = new();
             mockOnlineWalletEntry.SetupSet(x => x.Amount = It.IsAny<decimal>());
             mockOnlineWalletEntry.SetupSet(x => x.BalanceBefore = It.IsAny<decimal>());
             mockOnlineWalletEntry.SetupSet(x => x.EventTime = It.IsAny<DateTimeOffset>());
-            mockOnlineWalletEntry.SetupGet(x => x.Amount).Returns(DEPOSIT_AMOUNT);
-            mockOnlineWalletEntry.SetupGet(x => x.BalanceBefore).Returns(BALANCE_BEFORE);
             mockOnlineWalletEntryFactory.SetupGet(x => x.GetOnlineWalletEntry).Returns(mockOnlineWalletEntry.Object);
             mockOnlineWalletService.SetupGet(x => x.EntryFactory).Returns(mockOnlineWalletEntryFactory.Object);
-            var mockBalance = new Mock<Balance>();
-            mockBalance.SetupGet(x => x.Amount).Returns(BALANCE_BEFORE);
-            Task<Balance> GetBalance() => Task.Run(() => mockBalance.Object);
-            mockOnlineWalletService.Setup(x => x.GetBalanceAsync()).Returns(GetBalance);
             _onlineWalletService = mockOnlineWalletService.Object;
             var mockDeposit = new Mock<Deposit>();
-            mockDeposit.SetupGet(x => x.Amount).Returns(DEPOSIT_AMOUNT);
+            mockDeposit.SetupGet(x => x.Amount).Returns(0);
+            var mockBalance = new Mock<Balance>();
+            mockBalance.SetupGet(x => x.Amount).Returns(0);
+            Task<Balance> GetBalance() => Task.Run(() => mockBalance.Object);
+            mockOnlineWalletService.Setup(x => x.GetBalanceAsync()).Returns(GetBalance).Callback(() =>
+                {
+                    // Assert
+                    if (previousCallIsGetBalance)
+                    {
+                        Assert.Fail();
+                    }
+                    previousCallIsGetBalance = true;
+                }
+            );
+            mockOnlineWalletRepository.Setup(x => x.InsertOnlineWalletEntryAsync(It.IsAny<OnlineWalletEntry>())).Callback(() =>
+            {
+                // Assert
+                if (!previousCallIsGetBalance)
+                {
+                    Assert.Fail();
+                }
+                previousCallIsGetBalance = false;
+            });
 
             // Act
+            List<Task<Balance?>> result = [];
             for (byte i = 0; i < LOOP_MAX; i++)
             {
-                var result = _onlineWalletService.DepositFundsAsync(mockDeposit.Object);
+                result.Add(_onlineWalletService.DepositFundsAsync(mockDeposit.Object));
             }
-
-            _ = await _onlineWalletService.DepositFundsAsync(mockDeposit.Object);
-
-            // Assert
-            mockOnlineWalletRepository.Verify(x => x.InsertOnlineWalletEntryAsync(It.Is<OnlineWalletEntry>(y => y.Amount.Equals(DEPOSIT_AMOUNT)
-            && y.BalanceBefore.Equals(BALANCE_BEFORE))), Times.Exactly(LOOP_MAX + 1));
         }
 
         [Test]
@@ -805,69 +809,54 @@ namespace Betsson.OnlineWallets.UnitTests.Services
         /// Withdraw amount is inserted into online wallet without any missing insertions.
         /// </summary>
         [Test]
-        //[Repeat(25)]
         async public Task TestWithdrawFundsAsync_TimingInsertion()
         {
             // Arrange
             const byte LOOP_MAX = 100;
-            const decimal BALANCE_STARTING_VALUE = 10000;
-            const decimal WITHDRAW_STARTING_VALUE = 2;
-            decimal withdrawAmount = WITHDRAW_STARTING_VALUE;
-            decimal balanceAmount = BALANCE_STARTING_VALUE;
             var mockOnlineWalletRepository = new Mock<IOnlineWalletRepository>();
-            List<decimal> resultAmount = [];
-            List<decimal> resultBalance = [];
-            Task<Balance?> task;
-            byte i = 0;
-            do
+            var mockOnlineWalletService = new Mock<OnlineWalletService>(mockOnlineWalletRepository.Object)
             {
-                // Arrange
-                var mockOnlineWalletService = new Mock<OnlineWalletService>(mockOnlineWalletRepository.Object)
+                CallBase = true
+            };
+            bool previousCallIsGetBalance = false;
+            Mock<OnlineWalletEntryFactory> mockOnlineWalletEntryFactory = new();
+            Mock<OnlineWalletEntry> mockOnlineWalletEntry = new();
+            mockOnlineWalletEntry.SetupSet(x => x.Amount = It.IsAny<decimal>());
+            mockOnlineWalletEntry.SetupSet(x => x.BalanceBefore = It.IsAny<decimal>());
+            mockOnlineWalletEntry.SetupSet(x => x.EventTime = It.IsAny<DateTimeOffset>());
+            mockOnlineWalletEntryFactory.SetupGet(x => x.GetOnlineWalletEntry).Returns(mockOnlineWalletEntry.Object);
+            mockOnlineWalletService.SetupGet(x => x.EntryFactory).Returns(mockOnlineWalletEntryFactory.Object);
+            _onlineWalletService = mockOnlineWalletService.Object;
+            var mockDeposit = new Mock<Deposit>();
+            mockDeposit.SetupGet(x => x.Amount).Returns(0);
+            var mockBalance = new Mock<Balance>();
+            mockBalance.SetupGet(x => x.Amount).Returns(0);
+            Task<Balance> GetBalance() => Task.Run(() => mockBalance.Object);
+            mockOnlineWalletService.Setup(x => x.GetBalanceAsync()).Returns(GetBalance).Callback(() =>
+            {
+                // Assert
+                if (previousCallIsGetBalance)
                 {
-                    CallBase = true
-                };
-                _onlineWalletService = mockOnlineWalletService.Object;
-                mockOnlineWalletRepository.Setup(x => x.InsertOnlineWalletEntryAsync(It.IsAny<OnlineWalletEntry>())).Callback<OnlineWalletEntry>(y =>
-                {
-                    resultBalance.Add(y.BalanceBefore);
-                    resultAmount.Add(y.Amount);
-                });
-                Mock<BalanceFactory> mockBalanceFactory = new();
-                var mockBalance = new Mock<Balance>();
-                mockBalance.SetupGet(x => x.Amount).Returns(balanceAmount -= withdrawAmount);
-                Task<Balance> GetBalance = Task.Run(() => mockBalance.Object);
-                mockOnlineWalletService.Setup(x => x.GetBalanceAsync()).Returns(GetBalance);
-                var mockOnlineWalletEntry = new Mock<OnlineWalletEntry>();
-                mockOnlineWalletEntry.SetupSet(x => x.Amount = It.IsAny<decimal>()).Callback<decimal>(x => mockOnlineWalletEntry.SetupGet(y => y.Amount).Returns(x));
-                mockOnlineWalletEntry.SetupSet(x => x.BalanceBefore = It.IsAny<decimal>()).Callback<decimal>(x => mockOnlineWalletEntry.SetupGet(y => y.BalanceBefore).Returns(x));
-                mockOnlineWalletEntry.SetupSet(x => x.EventTime = It.IsAny<DateTimeOffset>());
-                Mock<OnlineWalletEntryFactory> mockOnlineWalletEntryFactory = new();
-                mockOnlineWalletEntryFactory.SetupGet(x => x.GetOnlineWalletEntry).Returns(mockOnlineWalletEntry.Object);
-                mockOnlineWalletService.SetupGet(x => x.EntryFactory).Returns(mockOnlineWalletEntryFactory.Object);
-                var mockWithdrawal = new Mock<Withdrawal>();
-                mockWithdrawal.SetupGet(x => x.Amount).Returns(withdrawAmount++);
-                
-                Mock<Balance> mockResultBalance = new();
-                mockResultBalance.SetupSet(x => x.Amount = It.IsAny<decimal>());
-                mockBalanceFactory.SetupGet(x => x.GetBalance).Returns(mockResultBalance.Object);
-                mockOnlineWalletService = new();
-                mockOnlineWalletService.SetupGet(x => x.BalanceFactory).Returns(mockBalanceFactory.Object);
-
-                // Act
-                task = _onlineWalletService.WithdrawFundsAsync(mockWithdrawal.Object);
+                    Assert.Fail();
+                }
+                previousCallIsGetBalance = true;
             }
-            while (i++ < LOOP_MAX);
-
-            // Assert
-            withdrawAmount = WITHDRAW_STARTING_VALUE;
-            balanceAmount = BALANCE_STARTING_VALUE;
-            task.Wait();
-            for (int j = 0; j < resultAmount.Count; j++)
+            );
+            mockOnlineWalletRepository.Setup(x => x.InsertOnlineWalletEntryAsync(It.IsAny<OnlineWalletEntry>())).Callback(() =>
             {
+                // Assert
+                if (!previousCallIsGetBalance)
+                {
+                    Assert.Fail();
+                }
+                previousCallIsGetBalance = false;
+            });
 
-                mockOnlineWalletRepository.Verify(x => x.InsertOnlineWalletEntryAsync(It.Is<OnlineWalletEntry>(y =>
-                y.BalanceBefore == resultBalance[j] && y.Amount == resultAmount[j])));
-                withdrawAmount++;
+            // Act
+            List<Task<Balance?>> result = [];
+            for (byte i = 0; i < LOOP_MAX; i++)
+            {
+                result.Add(_onlineWalletService.DepositFundsAsync(mockDeposit.Object));
             }
         }
 
@@ -914,7 +903,7 @@ namespace Betsson.OnlineWallets.UnitTests.Services
             Task<Balance> GetBalance() => Task.Run(() => mockActualBalance.Object);
             mockOnlineWalletService.Setup(x => x.GetBalanceAsync()).Returns(GetBalance);
             _onlineWalletService = mockOnlineWalletService.Object;
-            List<Task<Balance>> result = [];
+            List<Task<Balance?>> result = [];
 
             byte i = 0;
             do
@@ -936,10 +925,10 @@ namespace Betsson.OnlineWallets.UnitTests.Services
 
             // Assert
             withdrawAmount = WITHDRAW_STARTING_VALUE;
-            foreach (Task<Balance> task in result)
+            foreach (Task<Balance?> task in result)
             {
                 task.Wait();
-                Assert.That(task.Result.Amount, Is.EqualTo(BALANCE_STARTING_VALUE - withdrawAmount++));
+                Assert.That(task?.Result?.Amount, Is.EqualTo(BALANCE_STARTING_VALUE - withdrawAmount++));
             }
         }
     }

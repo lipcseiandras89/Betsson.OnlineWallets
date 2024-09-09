@@ -66,6 +66,7 @@ namespace Betsson.OnlineWallets.Services
             catch
             {
                 // TODO implement error message logic
+                semaphoreDeposit.Release();
                 return null;
             }
 
@@ -78,7 +79,7 @@ namespace Betsson.OnlineWallets.Services
 
         public async virtual Task<Balance?> WithdrawFundsAsync(Withdrawal withdrawal)
         {
-            //semaphoreWithdraw.Wait();
+            semaphoreWithdraw.Wait();
             decimal withdrawalAmount = withdrawal.Amount;
             decimal currentBalanceAmount;
             OnlineWalletEntry withdrawalEntry;
@@ -101,13 +102,14 @@ namespace Betsson.OnlineWallets.Services
             catch
             {
                 // TODO implement error message logic
+                semaphoreWithdraw.Release();
                 return null;
             }
 
 
             Balance newBalance = BalanceFactory.GetBalance;
             newBalance.Amount = currentBalanceAmount + withdrawalAmount;
-            //semaphoreWithdraw.Release();
+            semaphoreWithdraw.Release();
 
             return newBalance;
         }
