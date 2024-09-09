@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Betsson.OnlineWallets.Data
 {
-    public class OnlineWalletContext : DbContext, IOnlineWalletContext
+    public class OnlineWalletContext : DbContext
     {
         public DbSet<OnlineWalletEntry> Transactions { get; set; }
 

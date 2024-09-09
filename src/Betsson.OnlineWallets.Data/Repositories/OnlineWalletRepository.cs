@@ -12,9 +12,9 @@ namespace Betsson.OnlineWallets.Data.Repositories
     {
         internal static readonly string WALLETCONTEXT_WAS_NULL = "WalletContext was null.";
         internal static readonly string WALLETCONTEXT_TRANSACTIONS_WAS_NULL = "WalletContext.Transactions was null.";
-        internal readonly IOnlineWalletContext _onlineWalletContext;
+        internal readonly OnlineWalletContext _onlineWalletContext;
 
-        public OnlineWalletRepository(IOnlineWalletContext onlineWalletContext)
+        public OnlineWalletRepository(OnlineWalletContext onlineWalletContext)
         {
             _onlineWalletContext = onlineWalletContext is null ? throw new ArgumentException(WALLETCONTEXT_WAS_NULL) : 
                 onlineWalletContext.Transactions is null ? throw new ArgumentException(WALLETCONTEXT_TRANSACTIONS_WAS_NULL) : onlineWalletContext;

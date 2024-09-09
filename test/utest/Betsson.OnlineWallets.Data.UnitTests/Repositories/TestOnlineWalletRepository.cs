@@ -56,7 +56,7 @@ namespace Betsson.OnlineWallets.Data.UnitTests.Repositories
         public void TestConstructor_TransactionsIsNull()
         {
             // Arrange
-            Mock<IOnlineWalletContext> mockContext = new();
+            Mock<OnlineWalletContext> mockContext = new();
             mockContext.SetupGet(x => x.Transactions).Returns(null as DbSet<OnlineWalletEntry>);
 
             // Act
@@ -83,7 +83,7 @@ namespace Betsson.OnlineWallets.Data.UnitTests.Repositories
         public void TestInsertOnlineWalletEntryAsync_OnlineWalletEntryIsNull()
         {
             // Arrange
-            Mock<IOnlineWalletContext> mockContext = new Mock<IOnlineWalletContext>();
+            Mock<OnlineWalletContext> mockContext = new Mock<OnlineWalletContext>();
             mockContext.SetupGet(x => x.Transactions).Returns(new Mock<DbSet<OnlineWalletEntry>>().Object);
             _onlineWalletRepository = new OnlineWalletRepository(mockContext.Object);
             OnlineWalletEntry onlineWalletEntry = null;
@@ -112,14 +112,14 @@ namespace Betsson.OnlineWallets.Data.UnitTests.Repositories
         public void TestInsertOnlineWalletEntryAsync_Order()
         {
             // Arrange
-            Mock<IOnlineWalletContext> mockContext = new(MockBehavior.Strict);
+            Mock<OnlineWalletContext> mockContext = new(MockBehavior.Strict);
             Mock<DbSet<OnlineWalletEntry>> mockTransaction = new(MockBehavior.Strict);
             mockContext.SetupGet(x => x.Transactions).Returns(mockTransaction.Object);
             _onlineWalletRepository = new OnlineWalletRepository(mockContext.Object);
             Mock<OnlineWalletEntry> mockOnlineWalletEntry = new();
             MockSequence mockSequence = new();
             Expression<Func<DbSet<OnlineWalletEntry>, EntityEntry<OnlineWalletEntry>>> mockTransactionAction = x => x.Add(It.Is<OnlineWalletEntry>(y => y.Equals(mockOnlineWalletEntry.Object)));
-            Expression<Func<IOnlineWalletContext, int>> mockContextAction = x => x.SaveChanges();
+            Expression<Func<OnlineWalletContext, int>> mockContextAction = x => x.SaveChanges();
             mockTransaction.InSequence(mockSequence).Setup(mockTransactionAction).Returns(It.IsAny<EntityEntry<OnlineWalletEntry>>);
             mockContext.InSequence(mockSequence).Setup(mockContextAction).Returns(0);
 
