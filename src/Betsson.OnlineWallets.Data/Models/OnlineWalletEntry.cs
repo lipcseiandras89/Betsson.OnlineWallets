@@ -8,7 +8,7 @@ namespace Betsson.OnlineWallets.Data.Models
         public virtual decimal Amount { get; set; }
         public virtual decimal BalanceBefore { get; set; }
 
-        public OnlineWalletEntry() {  }
+        public OnlineWalletEntry() { Construct(); }
 
         internal virtual void Construct() { Id = Guid.NewGuid().ToString(); }
     }
